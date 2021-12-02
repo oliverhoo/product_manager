@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <!--使用element-ui之前要先引入vue，他是基于vue的-->
+    <script src="js/vuejs-2.5.16.js"></script>
+    <!--引入element-ui的样式-->
+    <link rel="stylesheet" href="element-ui/lib/theme-chalk/index.css">
+    <!--引入element-ui的js文件-->
+    <script src="element-ui/lib/index.js"></script>
+    <!--引入axios-->
+    <script src="js/axios-0.18.0.js"></script>
+    <style>
+        .el-header {
+            background-color: #545c64;
+        }
+
+        .header-title {
+            font: italic bold 20px/60px arial;
+            color: white;
+            width: 100px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+
+        <!--
+            用于添加以及修改的弹出框
+            :visible.sync="dialogFormVisible" 用来控制dialog窗口是否显示。
+        -->
+        <el-dialog title="商品信息" :visible.sync="dialogFormVisible">
+            <el-form :model="product">
+                <el-form-item label="商品名" >
+                    <el-input v-model="product.name" auto-complete="off"></el-input>
+                </el-form-item>
+                <el-form-item label="上架">
+                    <el-radio-group v-model="product.sell">
+                        <el-radio label="上架"></el-radio>
+                        <el-radio label="不上架"></el-radio>
+                    </el-radio-group>
+                </el-form-item>
+                <el-form-item label="价格" >
+                    <el-input v-model="product.price" auto-complete="off"></el-input>
+                </el-form-item>
+                <el-form-item label="产地" >
+                    <el-input v-model="product.address" auto-complete="off"></el-input>
+                </el-form-item>
+            </el-form>
+            <div slot="footer" class="dialog-footer">
+                <el-button @click="dialogFormVisible = false">取 消</el-button>
+                <el-button type="primary" @click="doAddOrEdit">确 定</el-button>
+            </div>
+        </el-dialog>
+
+        <!--最外层容器-->
+        <el-container>
+            <!--头部导航-->
+            <el-header>
+                <el-container>
+                    <!--左上角的标题-->
+                    <div>
+                        <span class="header-title">黑马程序员</span>
+                    </div>
+                    <!--右上角的菜单栏-->
+                    <el-menu
+                            default-active="1"
+                            mode="horizontal"
+                            background-color="#545c64"
+                            text-color="#fff"
+                            active-text-color="#ffd04b"
+                            style="margin-left: auto">
+                        <el-menu-item index="1">处理中心</el-menu-item>
+                        <el-submenu index="2">
+                            <template slot="title">我的工作台</template>
+                            <el-menu-item index="2-1">选项1</el-menu-item>
+                            <el-menu-item index="2-2">选项2</el-menu-item>
+                            <el-menu-item index="2-3">选项3</el-menu-item>
+                        </el-submenu>
+                        <el-menu-item index="4"><a href="https://www.ele.me" target="_blank">首页</a></el-menu-item>
+                    </el-menu>
+                </el-container>
+            </el-header>
+            <!--下面的侧边栏和主要区域-->
+            <el-container>
+                <el-aside>
+                    <el-menu>
+                        <el-submenu index="1">
+                            <template slot="title">
+                                <i class="el-icon-location"></i>
+                                <span>商品信息管理</span>
+                            </template>
+                        </el-submenu>
+                    </el-menu>
+                    </el-col>
+                </el-aside>
+                <el-main>
+                    <div style="float: right">
+                        <el-button @click="toAdd" type="success">添加按钮</el-button>
+                    </div>
+                    <!--
+                        :data：表示表格绑定的数据
+                    -->
+                    <el-table
+                            :data="pagination.list"
+                            style="width: 100%">
+                        <!--prop数组中对象的属性名，label是显示的内容-->
+                        <el-table-column
+                                prop="name"
+                                label="商品名"
+                                width="180">
+                        </el-table-column>
+                        <el-table-column
+                                prop="sell"
+                                label="上架"
+                                width="180">
+                        </el-table-column>
+                        <el-table-column
+                                prop="price"
+                                label="价格"
+                                width="180">
+                        </el-table-column>
+                        <el-table-column
+                                prop="address"
+                                label="产地">
+                        </el-table-column>
+                        <el-table-column label="操作"
+                                         width="180">
+                            <template slot-scope="scope">
+                                <!--
+                                    scope.row 表示当前行的对象
+                                    scope.row.id 表示当前行对象的id
+                                -->
+                                <el-button
+                                        @click="toEdit(scope.row.id)"
+                                        size="mini">编辑</el-button>
+                                <el-button
+                                        @click="doDelete(scope.row.id)"
+                                        size="mini"
+                                        type="danger">删除</el-button>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+                    <!--
+                        在表格下面放置分页组件
+                        @size-change:在修改每页显示大小时执行的函数
+                        @current-change：选中页码变化的时候会会执行的函数
+                        :current-page= 当前选中的页码
+                        :page-sizes： 每页大小的选择框中的内容
+                        :page-size: 每页大小
+                        :total="400"总数量
+                        layout="total, sizes, prev, pager, next, jumper" 布局
+
+                    -->
+                    <el-pagination
+                            @size-change="handleSizeChange"
+                            @current-change="handleCurrentChange"
+                            :page-sizes="[3, 5, 8, 10]"
+                            :page-size="pagination.pageSize"
+                            layout="total, sizes, prev, pager, next, jumper"
+                            :total="pagination.totalCount">
+                    </el-pagination>
+                </el-main>
+            </el-container>
+        </el-container>
+    </div>
+</body>
+<script>
+    let vue = new Vue({
+        el: '#app',
+        data: {
+            products: [],
+            //分页使用的数据，该对象会封装分页查询到的数据，以及页码等数据
+            pagination: {
+                pageNum: 1,//当前页码
+                pageSize: 5, //每页大小
+                list: [], //保存数据的数组
+                totalCount: 0 //总数据条数【随便写一个】
+            },
+            //用于绑定添加以及修改商品的信息对象
+            product: {},
+            //用来控制添加以及修改的dialog是否显示
+            dialogFormVisible: false,
+            //用来决定dialog弹框是添加还是修改【true表示添加，false表示修改】
+            addOrEdit: true
+        },
+        methods: {
+            //查询所有商品
+            findAll() {
+                //定义url
+                let url = 'product?action=findAll';
+                //发送ajax异步请求
+                axios.get(url).then(resp => {
+                    //获取响应的数据
+                    let result = resp.data;
+                    //判断，如果成功，赋值给products
+                    if(result.success) {
+                        this.products = result.obj;
+                    } else {
+                        //失败，给出提示
+                        alert(this.message);
+                    }
+                });
+            },
+            //分页查询
+            findByPage() {
+                //定义url
+                let url = 'product?action=findByPage&pageNum=' + this.pagination.pageNum + '&pageSize=' + this.pagination.pageSize;
+                //发送ajax异步请求
+                axios.get(url).then(resp => {
+                    //获取响应数据
+                    let result = resp.data;
+                    //判断如果成功，进行赋值
+                    if (result.success) {
+                        //将数据【pagebean】赋值给pagination
+                        this.pagination = result.obj;
+                    } else {
+                        //如果失败，弹框
+                        alert(result.message);
+                    }
+                });
+            },
+            //分页时，每页大小改变调用的方法
+            handleSizeChange(pageSize) {
+                //修改分页数据模型中的每页大小
+                this.pagination.pageSize = pageSize;
+                //重新分页查询
+                this.findByPage();
+            },
+            //分页时，页码变化执行的函数
+            handleCurrentChange(pageNum) {
+                //将数据模型中的页码进行改变
+                this.pagination.pageNum = pageNum;
+                //重新进行分页查询
+                this.findByPage();
+            },
+            //去添加的方法
+            toAdd() {
+                //将dialog标记改成添加的标记【true】
+                this.addOrEdit = true;
+                //把product对象的内容情况
+                this.product = {};
+                //弹出dialog窗口
+                this.dialogFormVisible = true;
+            },
+            //执行添加的方法
+            doAdd() {
+                //定义url
+                let url = 'product?action=save';
+                //发送请求
+                axios.post(url, this.product).then(resp => {
+                    //获取服务器响应的数据
+                    let result = resp.data;
+                    //判断
+                    if (result.success) {
+                        //添加成功，重新查询
+                        this.findByPage();
+                        //关闭弹出框
+                        this.dialogFormVisible = false;
+                    } else {
+                        alert(result.message);
+                    }
+                });
+            },
+            //根据id查询
+            findById(id) {
+                //定义url
+                let url = 'product?action=findById&id=' + id;
+                //发送请求
+                axios.get(url).then(resp => {
+                    //接收服务器回复过来的数据
+                    let result = resp.data;
+                    //判断是否成功
+                    if (result.success) {
+                        //如果成功了，将查询到的数据赋值给数据模型中的product
+                        this.product = result.obj;
+                    } else {
+                        //弹框
+                        alert(result.message);
+                    }
+                });
+            },
+            //去修改
+            toEdit(id) {
+                //将dialog窗口的标记改成false表示在进行修改
+                this.addOrEdit = false;
+                //先根据id查询该商品
+                this.findById(id);
+                //弹框
+                this.dialogFormVisible = true;
+            },
+            //执行添加或者修改【取决于addOrEdit标记，如果是true就执行添加，如果是false就执行修改】
+            doAddOrEdit() {
+                if (this.addOrEdit) {
+                    //如果标记是true，执行添加
+                    this.doAdd();
+                } else {
+                    //如果标记是false，就执行修改
+                    this.doEdit();
+                }
+            },
+            //执行修改操作
+            doEdit() {
+                //定义url
+                let url = 'product?action=update';
+                //发送请求去修改
+                axios.post(url, this.product).then(resp => {
+                    //接收服务器回复的数据
+                    let result = resp.data;
+                    //判断
+                    if(result.success) {
+                        //成功，重新查询数据
+                        this.findByPage();
+                        //关闭弹出框
+                        this.dialogFormVisible = false;
+                    } else {
+                        //弹框提示
+                        alert(result.message);
+                    }
+                });
+            },
+            //删除
+            doDelete(id) {
+                //定义url
+                let url = 'product?action=delete';
+                //定义参数部分
+                let params = 'id=' + id;
+                //发送异步请求
+                axios.post(url,params).then(resp => {
+                    //获取数据部分
+                    let result = resp.data;
+                    //判断并处理
+                    if (result.success) {
+                        //重新查询
+                        this.findByPage();
+                    } else {
+                        //提示
+                        alert(result.message);
+                    }
+                })
+            }
+        },
+        created() {
+            //查询所有
+            //this.findAll();
+            //分页查询
+            this.findByPage();
+        }
+    });
+</script>
+</html>

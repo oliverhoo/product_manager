@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+    <!--指定properties-->
+    <properties resource="jdbc.properties"></properties>
+    <!--别名设置-->
+    <typeAliases>
+        <package name="com.itheima.pojo"></package>
+    </typeAliases>
+    <!--配置数据库环境-->
+    <environments default="mysql">
+        <!--配置Mysql数据库环境-->
+        <environment id="mysql">
+            <!--表示使用JDBC型事务管理器-->
+            <transactionManager type="JDBC"></transactionManager>
+            <!--数据库(连接池)配置，POOLED是mybatis内置的连接池-->
+            <dataSource type="POOLED">
+                <!--数据库的四大信息-->
+                <property name="driver" value="${jdbc.driver}"></property>
+                <property name="url" value="${jdbc.url}"></property>
+                <property name="username" value="${jdbc.username}"></property>
+                <property name="password" value="${jdbc.password}"></property>
+            </dataSource>
+        </environment>
+    </environments>
+    <!--扫描映射文件-->
+    <mappers>
+        <package name="com.itheima.dao"></package>
+    </mappers>
+   
+</configuration>
